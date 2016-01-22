@@ -29,18 +29,11 @@ namespace ArrowCardGame
         {
             if (m_DeckDefinition == null)
             {
-                Debug.LogError("Visual deck doesn't have a Deckdefinition!", this);
-                return;
-            }
-
-            if (m_VisualCardPrefab == null)
-            {
-                Debug.LogError("Visual deck doesn't have a VisualCardPrefab!", this);
+                m_Deck = new Deck();
                 return;
             }
 
             m_Deck = new Deck(m_DeckDefinition);
-
             m_VisualCards = new List<VisualCard>();
 
             List<Card> cards = m_Deck.Cards;

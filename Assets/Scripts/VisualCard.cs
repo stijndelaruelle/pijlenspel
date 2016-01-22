@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace ArrowCardGame
 {
-    public class VisualCard : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public class VisualCard : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         public static VisualCard m_DraggedCard = null;
 
@@ -134,14 +134,6 @@ namespace ArrowCardGame
             FaceUp(m_VisualCardSlot.FaceUp);
         }
 
-        private void SetParent(Transform parent, float scale)
-        {
-            transform.SetParent(parent);
-            transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
-            transform.localRotation = Quaternion.identity;
-            transform.localScale = new Vector3(scale, scale, scale);
-        }
-
         public void SetVisualCardSlot(VisualCardSlot visualCardSlot)
         {
             m_LastVisualCardSlot = m_VisualCardSlot;
@@ -158,6 +150,34 @@ namespace ArrowCardGame
                 if (m_LastVisualCardSlot != null)
                     m_LastVisualCardSlot.UpdateCardSlot();
             }
+        }
+
+        private void SetParent(Transform parent, float scale)
+        {
+            transform.SetParent(parent);
+            transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
+            transform.localScale = new Vector3(scale, scale, scale);
+
+            UpdateRotation();
+        }
+
+        private void Rotate()
+        {
+            m_Card.Rotate();
+            UpdateRotation();
+
+            m_VisualCardSlot.UpdateCardSlot();
+        }
+
+        private void UpdateRotation()
+        {
+            Quaternion quat = Quaternion.identity;
+            if (m_Card.IsRotated)
+            {
+                quat = Quaternion.Euler(new Vector3(0.0f, 0.0f, 180.0f));
+            }
+
+            transform.localRotation = quat;
         }
 
         private void FaceUp(bool value)
@@ -183,20 +203,6 @@ namespace ArrowCardGame
             }
         }
 
-        private void OnCardAnalysed(bool state, Direction dir)
-        {
-            //Make the arrows glow or not depending on if they are in a link or not!
-            int id = (int)dir * 3;
-
-            for (int j = 0; j < 3; ++j)
-            {
-                if (m_Arrows[id + j].gameObject.activeSelf)
-                {
-                    m_Arrows[id + j].ShowGlow(state);
-                }
-            }
-        }
-
         //----------------
         // INTERFACES
         //----------------
@@ -206,6 +212,16 @@ namespace ArrowCardGame
         {
             //We click the card
             //Debug.Log("Card clicked");
+        }
+
+        //IPointerUpHandler
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            //Only rotate when we were not dragging around
+            if (m_DraggedCard == this)
+                return;
+
+            Rotate();
         }
 
         //IBeginDragHandler
@@ -225,6 +241,26 @@ namespace ArrowCardGame
         public void OnEndDrag(PointerEventData eventData)
         {
             Deselect();
+        }
+
+        //Events
+        private void OnCardAnalysed(bool state, Direction dir)
+        {
+            //Make the arrows glow or not depending on if they are in a link or not!
+            if (m_Card.IsRotated)
+            {
+                dir = Table.RotateDir(dir);
+            }
+
+            int id = (int)dir * 3;
+
+            for (int j = 0; j < 3; ++j)
+            {
+                if (m_Arrows[id + j].gameObject.activeSelf)
+                {
+                    m_Arrows[id + j].ShowGlow(state);
+                }
+            }
         }
 
         private Vector3 GetConvertedPosition()

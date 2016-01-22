@@ -24,6 +24,8 @@ namespace ArrowCardGame
 
         public void Analyse(AnalyseResult analyseResult)
         {
+            //Feels a bit weird that the main analyse logic is in the cardslot class, rethink later.
+
             if (m_Card == null)
                 return;
 

@@ -16,6 +16,10 @@ namespace ArrowCardGame
 
         private CardSlot m_CardSlot;
         private bool m_IsRotated = false;
+        public bool IsRotated
+        {
+            get { return m_IsRotated; }
+        }
 
         //Events
         private event VoidBoolDirectionDelegate m_CardAnalysedEvent;
@@ -28,6 +32,11 @@ namespace ArrowCardGame
         public Card(CardDefinition cardDefinition)
         {
             m_CardDefinition = cardDefinition;
+        }
+
+        public void Rotate()
+        {
+            m_IsRotated = !m_IsRotated;
         }
 
         public void SetCardSlot(CardSlot cardSlot)
@@ -60,13 +69,6 @@ namespace ArrowCardGame
             return false;
         }
 
-        public void CardAnalysed(bool state, Direction dir)
-        {
-            //Used to forward visual changes
-            if (m_CardAnalysedEvent != null)
-                m_CardAnalysedEvent(state, dir);
-        }
-
         public List<CardArrow> GetArrows(Direction dir)
         {
             if (m_IsRotated)
@@ -85,5 +87,13 @@ namespace ArrowCardGame
 
             return arrows;
         }
+
+        public void CardAnalysed(bool state, Direction dir)
+        {
+            //Used to forward visual changes
+            if (m_CardAnalysedEvent != null)
+                m_CardAnalysedEvent(state, dir);
+        }
+
     }
 }

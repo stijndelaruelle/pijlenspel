@@ -25,7 +25,7 @@ namespace ArrowCardGame
         public void Analyse(AnalyseResult analyseResult)
         {
             //Feels a bit weird that the main analyse logic is in the cardslot class, rethink later.
-
+            analyseResult.AddInvolvedCardSlot(this);
             if (m_Card == null)
                 return;
 
@@ -51,7 +51,7 @@ namespace ArrowCardGame
                             m_Card.CardAnalysed(true, dir);
                             foreach (CardArrow arrow in m_Card.GetArrows((Direction)i))
                             {
-                                analyseResult.AddArrows(this, arrow);
+                                analyseResult.AddArrows(1, arrow.Color);
                             }
 
                             //If our neighbour isn't analysed, analyse him

@@ -6,61 +6,47 @@ namespace ArrowCardGame
 {
     public class AnalyseResult
     {
-        private struct SpecificCardArrow
-        {
-            public SpecificCardArrow(CardSlot cardSlot, CardArrow cardArrow)
-            {
-                this.cardSlot = cardSlot;
-                this.cardArrow = cardArrow;
-            }
-
-            public CardSlot cardSlot;
-            public CardArrow cardArrow;
-        }
-
-        private List<SpecificCardArrow> m_SpecificCardArrow;
+        private List<CardSlot> m_InvolvedCardSlots;
+        private int[] m_NumArrows;
 
         public AnalyseResult()
         {
-            m_SpecificCardArrow = new List<SpecificCardArrow>();
+            m_InvolvedCardSlots = new List<CardSlot>();
+            m_NumArrows = new int[3]; //3 colors
         }
 
         //Mutators
-        public void AddArrows(CardSlot cardSlot, CardArrow cardArrow)
+        public void AddInvolvedCardSlot(CardSlot cardSlot)
         {
-            m_SpecificCardArrow.Add(new SpecificCardArrow(cardSlot, cardArrow));
+            m_InvolvedCardSlots.Add(cardSlot);
+        }
+
+        public void AddArrows(int amount, CardColor cardColor)
+        {
+            int cardColorID = (int)cardColor;
+            m_NumArrows[cardColorID] += amount;
         }
 
         //Accesors
         public bool IsCardSlotInvolved(CardSlot cardSlot)
         {
-            for (int i = 0; i < m_SpecificCardArrow.Count; ++i)
-            {
-                if (m_SpecificCardArrow[i].cardSlot == cardSlot)
-                    return true;
-            }
-
-            return false;
+            return m_InvolvedCardSlots.Contains(cardSlot);
         }
 
-        public List<CardArrow> GetLinkedArrows(CardSlot cardSlot)
+        public int GetNumberOfArrows(CardColor cardColor)
         {
-            List<CardArrow> involvedArrows = new List<CardArrow>();
-
-            for (int i = 0; i < m_SpecificCardArrow.Count; ++i)
-            {
-                if (m_SpecificCardArrow[i].cardSlot == cardSlot)
-                {
-                    involvedArrows.Add(m_SpecificCardArrow[i].cardArrow);
-                }
-            }
-
-            return involvedArrows;
+            int cardColorID = (int)cardColor;
+            return m_NumArrows[cardColorID];
         }
 
         public int TotalArrows()
         {
-            return m_SpecificCardArrow.Count;
+            int totalArrows = 0;
+            totalArrows += GetNumberOfArrows(CardColor.Red);
+            totalArrows += GetNumberOfArrows(CardColor.Green);
+            totalArrows += GetNumberOfArrows(CardColor.Blue);
+
+            return totalArrows;
         }
     }
 
@@ -180,24 +166,20 @@ namespace ArrowCardGame
 
             m_BestAnalyseResult = CalculateBestResult();
             m_WorstAnalyseResult = CalculateWorstResult();
+
+            Debug.Log("Red: " + m_BestAnalyseResult.GetNumberOfArrows(CardColor.Red) +
+                      " Green: " + m_BestAnalyseResult.GetNumberOfArrows(CardColor.Green) +
+                      " Blue: " + m_BestAnalyseResult.GetNumberOfArrows(CardColor.Blue));
+        }
+
+        public void Resolve()
+        {
+
         }
 
         public bool IsCardSlotInChain(CardSlot cardSlot)
         {
             return m_BestAnalyseResult.IsCardSlotInvolved(cardSlot);
-        }
-
-        public List<CardArrow> GetLinkedArrows(CardSlot cardSlot)
-        {
-            for (int i = 0; i < m_AnalyseResults.Count; ++i)
-            {
-                List<CardArrow> linkedArrows = m_AnalyseResults[i].GetLinkedArrows(cardSlot);
-
-                if (linkedArrows.Count > 0)
-                    return linkedArrows;
-            }
-
-            return new List<CardArrow>();
         }
 
         private AnalyseResult CalculateBestResult()

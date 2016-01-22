@@ -1,0 +1,10 @@
+//TODO
+
+- Glow rond gelinkte pijlen (auto analyse)
+- Chains resolven (end turn)
+- 2 spelers (health)
+- Om te beurt spelen
+   * Draw phase
+   * Play phase
+
+- AI

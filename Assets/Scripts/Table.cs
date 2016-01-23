@@ -31,17 +31,53 @@ namespace ArrowCardGame
 
         public void Start()
         {
-            m_AIController = new AIController(m_Board.Board, m_OpponentHand.Deck);
+            m_AIController = new AIController(m_Board.Board, m_OpponentHand.Deck, m_RedDeck.Deck, m_GreenDeck.Deck, m_BlueDeck.Deck);
+            StartGame();
+        }
+
+        public void StartGame()
+        {
+            //Draw a starting hand
+            m_PlayerHand.Deck.AddCard(m_RedDeck.Deck.DrawCard());
+            m_PlayerHand.Deck.AddCard(m_GreenDeck.Deck.DrawCard());
+            m_PlayerHand.Deck.AddCard(m_BlueDeck.Deck.DrawCard());
+
+            m_OpponentHand.Deck.AddCard(m_RedDeck.Deck.DrawCard());
+            m_OpponentHand.Deck.AddCard(m_GreenDeck.Deck.DrawCard());
+            m_OpponentHand.Deck.AddCard(m_BlueDeck.Deck.DrawCard());
+        }
+
+        public void StartTurn(bool player)
+        {
+
         }
 
         public void EndTurn()
         {
             m_Board.Resolve();
+            StartCoroutine(AIPlayRoutine());
         }
 
-        public void AIMove()
+        private IEnumerator AIPlayRoutine() 
         {
-            m_AIController.Process();
+            //Disable all the decks & the player's hand.
+            m_PlayerHand.AllowClicks(false);
+
+            m_RedDeck.AllowClicks(false);
+            m_GreenDeck.AllowClicks(false);
+            m_BlueDeck.AllowClicks(false);
+            
+
+            //Give the player a bit of time to see what happened (resolve)
+            yield return new WaitForSeconds(0.5f);
+
+            m_AIController.DrawCard();
+            m_AIController.CalculateMove();
+
+            //Give the player a bit of time to see what card the AI drew
+            yield return new WaitForSeconds(1.0f);
+
+            m_AIController.PlayMove();
         }
 
         public VisualCardSlot GetVisualCardSlot(CardSlot cardSlot)

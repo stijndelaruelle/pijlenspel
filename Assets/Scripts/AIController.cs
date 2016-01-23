@@ -43,14 +43,54 @@ namespace ArrowCardGame
 
         private Board m_Board;
         private Deck m_Hand;
+        private Deck m_RedDeck;
+        private Deck m_GreenDeck;
+        private Deck m_BlueDeck;
 
-        public AIController(Board board, Deck hand)
+        private AIAnalyseResult m_PreferredMove;
+
+        public AIController(Board board, Deck hand, Deck redDeck, Deck greenDeck, Deck blueDeck)
         {
             m_Board = board;
             m_Hand = hand;
+            m_RedDeck = redDeck;
+            m_GreenDeck = greenDeck;
+            m_BlueDeck = blueDeck;
         }
 
-        public void Process()
+        public void DrawCard()
+        {
+            //Don't care about empty decks!
+
+            float rand = Random.RandomRange(0.0f, 100.0f);
+            int colorId = (int)rand / 33;
+            CardColor cardColor = (CardColor)colorId;
+
+            Card card = null;
+
+            switch (cardColor)
+            {
+                case CardColor.Red:
+                    card = m_RedDeck.DrawCard();
+                    break;
+                    
+                case CardColor.Green:
+                    card = m_GreenDeck.DrawCard();
+                    break;
+
+                case CardColor.Blue:
+                    card = m_BlueDeck.DrawCard();
+                    break;
+
+                default:
+                    break;
+            }
+            
+            if (card != null)
+                m_Hand.AddCard(card);
+        }
+
+        public void CalculateMove()
         {
             if (m_Hand.Cards.Count == 0)
                 return;
@@ -82,20 +122,26 @@ namespace ArrowCardGame
                 }
             }
 
+            if (analyseResults.Count == 0)
+            {
+                Debug.LogWarning("There were no possiblities for the AI to consider, DO SOMETHING!");
+                return;
+            }
+
             //Now we've literally analysed every possible move.
-            AIAnalyseResult preferredMove = null;
+            m_PreferredMove = null;
 
             //Get the best result
             for (int i = 0; i < analyseResults.Count; ++i)
             {
                 //Update result
-                if (preferredMove == null)                                                           
+                if (m_PreferredMove == null)                                                           
                 {
-                    preferredMove = analyseResults[i];
+                    m_PreferredMove = analyseResults[i];
                 }
-                else if (analyseResults[i].AnalyseResult.TotalArrows() > preferredMove.AnalyseResult.TotalArrows())
+                else if (analyseResults[i].AnalyseResult.TotalArrows() > m_PreferredMove.AnalyseResult.TotalArrows())
                 {
-                    preferredMove = analyseResults[i];
+                    m_PreferredMove = analyseResults[i];
                 }
             }
 
@@ -116,10 +162,16 @@ namespace ArrowCardGame
             //        }
             //    }
             //}
+        }
 
+        public void PlayMove()
+        {
             //Play that move!
-            preferredMove.Card.Rotate(preferredMove.Rotated);
-            preferredMove.Card.CardSlot = preferredMove.CardSlot;
+            m_PreferredMove.Card.Rotate(m_PreferredMove.Rotated);
+            m_PreferredMove.Card.CardSlot = m_PreferredMove.CardSlot;
+            m_Board.Analyse(); //Analyse to update everything
+
+            m_Hand.RemoveCard(m_PreferredMove.Card);
         }
     }
 }

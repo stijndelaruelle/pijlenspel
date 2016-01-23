@@ -143,7 +143,7 @@ namespace ArrowCardGame
         {
             //Don't allow resnapping to slots with multiple cards (this can result in cheating by looking at the card and then making an invalid move to put it back)
             m_LastVisualCardSlot = null;
-            if (m_VisualCardSlot != null && m_VisualCardSlot.AllowMultipleCards == false)
+            if (m_VisualCardSlot != null)
             {
                 m_LastVisualCardSlot = m_VisualCardSlot;
                 m_LastVisualCardSlot.VisualCard = null;

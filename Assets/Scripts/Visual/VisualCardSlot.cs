@@ -39,15 +39,19 @@ namespace ArrowCardGame
                 if (m_VisualCard != value)
                 {
                     m_VisualCard = value;
-                    FireUpdateEvent();
-                }
-                
-                //Update our data
-                if (m_VisualCard != null)
-                {
-                    if (m_CardSlot.Card != value.Card)
+
+                    //Update our data
+                    if (m_VisualCard != null)
                     {
-                        m_CardSlot.Card = value.Card;
+                        if (m_CardSlot.Card != value.Card)
+                        {
+                            m_CardSlot.Card = value.Card;
+                            FireUpdateEvent();
+                        }
+                    }
+                    else
+                    {
+                        FireUpdateEvent();
                     }
                 }
             }

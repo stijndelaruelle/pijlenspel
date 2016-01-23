@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 namespace ArrowCardGame
 {
+    public delegate void VoidCardDelegate(Card card);
+
     //A collection of cards: Decks, Hands, Discard piles... anything!
     public class Deck
     {
@@ -11,6 +13,14 @@ namespace ArrowCardGame
         public List<Card> Cards
         {
             get { return m_Cards; }
+            set { m_Cards = value; }
+        }
+
+        private VoidCardDelegate m_CardAddedEvent;
+        public VoidCardDelegate CardAddedEvent
+        {
+            get { return m_CardAddedEvent; }
+            set { m_CardAddedEvent = value; }
         }
 
         public Deck()
@@ -36,6 +46,9 @@ namespace ArrowCardGame
                 return;
 
             m_Cards.Add(card);
+
+            if (m_CardAddedEvent != null)
+                m_CardAddedEvent(card);
         }
 
         public void RemoveCard(Card card)
@@ -46,16 +59,11 @@ namespace ArrowCardGame
             m_Cards.Remove(card);
         }
 
-        public void SetCards(List<Card> cards)
-        {
-            m_Cards = cards;
-        }
-
         public Card DrawCard()
         {
             if (m_Cards.Count > 0)
             {
-                Card card = m_Cards[m_Cards.Count - 1];
+                Card card = m_Cards[0];
                 m_Cards.Remove(card);
                 return card;
             }

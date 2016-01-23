@@ -23,10 +23,21 @@ namespace ArrowCardGame
         [SerializeField]
         private VisualDeck m_PlayerHand;
 
+        [SerializeField]
+        private CanvasGroup m_CanvasGroup;
+
         private Deck m_Deck;
         public Deck Deck
         {
             get { return m_Deck; }
+        }
+
+        //Event
+        private event VoidVisualCardSlotDelegate m_DrawCardEvent;
+        public VoidVisualCardSlotDelegate DrawCardEvent
+        {
+            get { return m_DrawCardEvent; }
+            set { m_DrawCardEvent = value; }
         }
 
         private void Start()
@@ -39,10 +50,13 @@ namespace ArrowCardGame
             if (m_DeckDefinition == null)
             {
                 m_Deck = new Deck();
+                m_Deck.CardAddedEvent += OnCardAdded;
                 return;
             }
 
             m_Deck = new Deck(m_DeckDefinition);
+            m_Deck.CardAddedEvent += OnCardAdded;
+
             m_VisualCards = new List<VisualCard>();
 
             List<Card> cards = m_Deck.Cards;
@@ -66,19 +80,37 @@ namespace ArrowCardGame
             {
                 visualCardSlot.VisualCardSlotUpdatedEvent -= OnCardSlotUpdated;
             }
+
+            m_Deck.CardAddedEvent -= OnCardAdded;
+        }
+
+        public void AllowClicks(bool state)
+        {
+            //m_CanvasGroup.blocksRaycasts = state;
+        }
+
+        private void OnCardAdded(Card card)
+        {
+            card.CardSlot = FirstEmptySlot().CardSlot;
         }
 
         private void OnCardSlotUpdated(VisualCardSlot updatedVisualCardSlot)
         {
-            //Lame but works for now
+            //Lame: But easy fix for now
             List<Card> cards = new List<Card>();
+
             foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
             {
-                if (visualCardSlot.VisualCard != null)
-                    cards.Add(visualCardSlot.VisualCard.Card);
+                //Exclude the decks SUPER LAME
+                if (visualCardSlot.AllowMultipleCards)
+                    return;
+
+                VisualCard visualCard = visualCardSlot.VisualCard;
+                if (visualCard != null)
+                    cards.Add(visualCard.Card);
             }
 
-            m_Deck.SetCards(cards);
+            m_Deck.Cards = cards;
         }
 
         public VisualCardSlot FirstEmptySlot()

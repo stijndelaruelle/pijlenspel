@@ -167,11 +167,11 @@ namespace ArrowCardGame
 
         public void Resolve()
         {
-            foreach (CardSlot cardSlot in m_BestAnalyseResult.InvolvedCardSlots)
-            {
-                //The card on all these slots should move to the discard pile
+            //foreach (CardSlot cardSlot in m_BestAnalyseResult.InvolvedCardSlots)
+            //{
+            //    //The card on all these slots should move to the discard pile
 
-            }
+            //}
         }
 
         public bool IsCardSlotInChain(CardSlot cardSlot)

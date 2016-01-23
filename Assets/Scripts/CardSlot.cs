@@ -15,7 +15,22 @@ namespace ArrowCardGame
         // 5   6  7
 
         private CardSlot[] m_Neighbours;
+
         private Card m_Card;
+        public Card Card
+        {
+            get { return m_Card; }
+            set
+            {
+                if (m_Card != value)
+                {
+                    m_Card = value;
+
+                    if (m_Card != null)
+                        m_Card.CardSlot = this;
+                }
+            }
+        }
 
         public CardSlot()
         {
@@ -45,7 +60,7 @@ namespace ArrowCardGame
                         //Does our neighbour have an arrow in the opposite direction?
                         Direction rotatedDir = Table.RotateDir(dir);
 
-                        if (neighbour.GetCard() != null && neighbour.GetCard().HasArrow(rotatedDir))
+                        if (neighbour.Card != null && neighbour.Card.HasArrow(rotatedDir))
                         {
                             //Yes! We have a "link". Add all our arrows in this direction.
                             m_Card.CardAnalysed(true, dir);
@@ -63,16 +78,6 @@ namespace ArrowCardGame
                     }
                 }
             }
-        }
-
-        public void SetCard(Card card)
-        {
-            m_Card = card;
-        }
-
-        public Card GetCard()
-        {
-            return m_Card;
         }
 
         public void SetNeightbour(Direction dir, CardSlot cardSlot)

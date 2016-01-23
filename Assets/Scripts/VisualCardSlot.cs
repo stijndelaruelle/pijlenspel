@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 namespace ArrowCardGame
 {
     public delegate void VoidDelegate();
+    public delegate void VoidVisualCardSlotDelegate(VisualCardSlot visualCardSlot);
 
     public class VisualCardSlot : MonoBehaviour, IPointerDownHandler, IDropHandler
     {
@@ -15,18 +16,49 @@ namespace ArrowCardGame
             get { return m_FaceUp; }
         }
 
+        [SerializeField]
+        private bool m_AllowMultipleCards = false;
+        public bool AllowMultipleCards
+        {
+            get { return m_AllowMultipleCards; }
+        }
+
         private CardSlot m_CardSlot;
         public CardSlot CardSlot
         {
             get { return m_CardSlot; }
         }
 
-        //Event
-        private event VoidDelegate m_CardSlotUpdatedEvent;
-        public VoidDelegate CardSlotUpdatedEvent
+        private VisualCard m_VisualCard;
+        public VisualCard VisualCard
         {
-            get { return m_CardSlotUpdatedEvent; }
-            set { m_CardSlotUpdatedEvent = value; }
+            get { return m_VisualCard; }
+            set
+            {
+                //Happens when the player places cards
+                if (m_VisualCard != value)
+                {
+                    m_VisualCard = value;
+                    FireUpdateEvent();
+                }
+                
+                //Update our data
+                if (m_VisualCard != null)
+                {
+                    if (m_CardSlot.Card != value.Card)
+                    {
+                        m_CardSlot.Card = value.Card;
+                    }
+                }
+            }
+        }
+
+        //Event
+        private event VoidVisualCardSlotDelegate m_VisualCardSlotUpdatedEvent;
+        public VoidVisualCardSlotDelegate VisualCardSlotUpdatedEvent
+        {
+            get { return m_VisualCardSlotUpdatedEvent; }
+            set { m_VisualCardSlotUpdatedEvent = value; }
         }
 
         private void Awake()
@@ -39,11 +71,10 @@ namespace ArrowCardGame
             return (transform.childCount == 0);
         }
 
-        public void UpdateCardSlot()
+        public void FireUpdateEvent()
         {
-            //We're taking away the card.
-            if (m_CardSlotUpdatedEvent != null)
-                m_CardSlotUpdatedEvent();
+            if (m_VisualCardSlotUpdatedEvent != null)
+                m_VisualCardSlotUpdatedEvent(this);
         }
 
         //----------------
@@ -63,7 +94,7 @@ namespace ArrowCardGame
             //Debug.Log("We dropped a card on the board!");
 
             //We only accept 1 card
-            if (transform.childCount > 0)
+            if (!m_AllowMultipleCards && transform.childCount > 0)
                 return;
 
             if (VisualCard.m_DraggedCard != null)

@@ -15,13 +15,42 @@ namespace ArrowCardGame
         }
 
         private CardSlot m_CardSlot;
+        public CardSlot CardSlot
+        {
+            get { return m_CardSlot; }
+            set
+            {
+                if (m_CardSlot != value)
+                {
+                    //Remove me from the old slot
+                    if (m_CardSlot != null)
+                        m_CardSlot.Card = null;
+
+                    m_CardSlot = value;
+                    
+                    if (m_CardSlot != null)
+                        m_CardSlot.Card = this;
+
+                    if (m_CardSlotUpdatedEvent != null)
+                        m_CardSlotUpdatedEvent();
+                }
+            }
+        }
+
         private bool m_IsRotated = false;
         public bool IsRotated
         {
             get { return m_IsRotated; }
         }
 
-        //Events
+        //Event
+        private event VoidDelegate m_CardSlotUpdatedEvent;
+        public VoidDelegate CardSlotUpdatedEvent
+        {
+            get { return m_CardSlotUpdatedEvent; }
+            set { m_CardSlotUpdatedEvent = value; }
+        }
+
         private event VoidBoolDirectionDelegate m_CardAnalysedEvent;
         public VoidBoolDirectionDelegate CardAnalysedEvent
         {
@@ -39,16 +68,9 @@ namespace ArrowCardGame
             m_IsRotated = !m_IsRotated;
         }
 
-        public void SetCardSlot(CardSlot cardSlot)
+        public void Rotate(bool value)
         {
-            //Reset old cardslot
-            if (m_CardSlot != null)
-                m_CardSlot.SetCard(null);
-
-            m_CardSlot = cardSlot;
-
-            if (cardSlot != null)
-                cardSlot.SetCard(this);
+            m_IsRotated = value;
         }
 
         public bool HasArrow(Direction dir)
@@ -90,7 +112,8 @@ namespace ArrowCardGame
 
         public void CardAnalysed(bool state, Direction dir)
         {
-            //Used to forward visual changes
+            //Used to forward visual changes (only way we communicate upwards!)
+            //Want to change this as we don't want to communcate up visually.
             if (m_CardAnalysedEvent != null)
                 m_CardAnalysedEvent(state, dir);
         }

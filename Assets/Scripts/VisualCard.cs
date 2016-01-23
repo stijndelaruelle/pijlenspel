@@ -26,7 +26,7 @@ namespace ArrowCardGame
         private VisualCardSlot m_LastVisualCardSlot;
 
         private RectTransform m_TableRoot;
-        private CardSlotGrid m_DefaultCardSlotGrid;
+        private VisualDeck m_PlayerHand;
         
         private RectTransform m_CanvasTransform; //The canvas transform, used for drag & drop
         private CanvasGroup m_CanvasGroup;
@@ -45,15 +45,20 @@ namespace ArrowCardGame
         private void OnDestroy()
         {
             if (m_IsInitialized && m_Card != null)
+            {
+                m_Card.CardSlotUpdatedEvent -= OnCardSlotUpdated;
                 m_Card.CardAnalysedEvent -= OnCardAnalysed;
+            }    
         }
 
-        public void Initialize(Card card, RectTransform tableRoot, CardSlotGrid defaultCardSlotGrid)
+        public void Initialize(Card card, RectTransform tableRoot, VisualDeck playerHand)
         {
             m_Card = card;
             m_TableRoot = tableRoot;
-            m_DefaultCardSlotGrid = defaultCardSlotGrid;
+            m_PlayerHand = playerHand;
 
+            //Subscribe to events
+            m_Card.CardSlotUpdatedEvent += OnCardSlotUpdated;
             m_Card.CardAnalysedEvent += OnCardAnalysed;
 
             //For editor purposes only
@@ -116,7 +121,7 @@ namespace ArrowCardGame
             {
                 if (m_LastVisualCardSlot == null)
                 {
-                    SetVisualCardSlot(m_DefaultCardSlotGrid.FirstEmptySlot());
+                    SetVisualCardSlot(m_PlayerHand.FirstEmptySlot());
                 }
                 else
                 {
@@ -136,23 +141,29 @@ namespace ArrowCardGame
 
         public void SetVisualCardSlot(VisualCardSlot visualCardSlot)
         {
-            m_LastVisualCardSlot = m_VisualCardSlot;
+            //Don't allow resnapping to slots with multiple cards (this can result in cheating by looking at the card and then making an invalid move to put it back)
+            m_LastVisualCardSlot = null;
+            if (m_VisualCardSlot != null && m_VisualCardSlot.AllowMultipleCards == false)
+            {
+                m_LastVisualCardSlot = m_VisualCardSlot;
+                m_LastVisualCardSlot.VisualCard = null;
+            }
+
             m_VisualCardSlot = visualCardSlot;
 
+            //Update our data structure
             if (m_VisualCardSlot != null)
             {
-                m_Card.SetCardSlot(visualCardSlot.CardSlot);
-                m_VisualCardSlot.UpdateCardSlot();
+                m_VisualCardSlot.VisualCard = this;
+                m_Card.CardSlot = visualCardSlot.CardSlot;
             }
             else
             {
-                m_Card.SetCardSlot(null);
-                if (m_LastVisualCardSlot != null)
-                    m_LastVisualCardSlot.UpdateCardSlot();
+                m_Card.CardSlot = null;
             }
         }
 
-        private void SetParent(Transform parent, float scale)
+        public void SetParent(Transform parent, float scale)
         {
             transform.SetParent(parent);
             transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
@@ -166,7 +177,7 @@ namespace ArrowCardGame
             m_Card.Rotate();
             UpdateRotation();
 
-            m_VisualCardSlot.UpdateCardSlot();
+            m_VisualCardSlot.FireUpdateEvent();
         }
 
         private void UpdateRotation()
@@ -244,6 +255,20 @@ namespace ArrowCardGame
         }
 
         //Events
+        private void OnCardSlotUpdated()
+        {
+            if (m_Card.CardSlot == null)
+                return;
+
+            VisualCardSlot visualCardSlot = Table.Instance.GetVisualCardSlot(m_Card.CardSlot);
+
+            SetVisualCardSlot(visualCardSlot);
+            SetParent(visualCardSlot.transform, 1.0f);
+
+            FaceUp(visualCardSlot.FaceUp);
+            UpdateRotation();
+        }
+
         private void OnCardAnalysed(bool state, Direction dir)
         {
             //Make the arrows glow or not depending on if they are in a link or not!

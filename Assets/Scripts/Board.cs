@@ -1,12 +1,16 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-
 namespace ArrowCardGame
 {
     public class AnalyseResult
     {
         private List<CardSlot> m_InvolvedCardSlots;
+        public List<CardSlot> InvolvedCardSlots
+        {
+            get { return m_InvolvedCardSlots; }
+        }
+
         private int[] m_NumArrows;
 
         public AnalyseResult()
@@ -50,131 +54,124 @@ namespace ArrowCardGame
         }
     }
 
-    public class Board : MonoBehaviour
+    public class Board
     {
-        [SerializeField]
         private int m_Width;
-
-        [SerializeField]
         private int m_Height;
-
-        [SerializeField]
-        private List<VisualCardSlot> m_VisualCardSlots;
-
-        private List<AnalyseResult> m_AnalyseResults;
-        private AnalyseResult m_BestAnalyseResult;
-        private AnalyseResult m_WorstAnalyseResult;
-
-        private void Start()
+        private List<CardSlot> m_CardSlots;
+        public List<CardSlot> CardSlots
         {
-            foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
-            {
-                visualCardSlot.CardSlotUpdatedEvent += OnCardSlotUpdated;
-            }
-
-            m_AnalyseResults = new List<AnalyseResult>();
-            InitializeGrid();
+            get { return m_CardSlots; }
         }
 
-        private void OnDestroy()
-        {
-            if (m_VisualCardSlots == null)
-                return;
+        //Analyse results
+        private List<AnalyseResult> m_AnalyseResults;
+        private AnalyseResult m_BestAnalyseResult;
 
-            foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
-            {
-                visualCardSlot.CardSlotUpdatedEvent -= OnCardSlotUpdated;
-            }
+        public Board(int width, int height, List<CardSlot> cardSlots)
+        {
+            m_Width = width;
+            m_Height = height;
+            m_CardSlots = cardSlots;
+
+            InitializeGrid();
+
+            m_AnalyseResults = new List<AnalyseResult>();
         }
 
         private void InitializeGrid()
         {
             //Set the neighbours
-            for (int i = 0; i < m_VisualCardSlots.Count; ++i)
+            for (int i = 0; i < m_CardSlots.Count; ++i)
             {
-                CardSlot cardSlot = m_VisualCardSlots[i].CardSlot;
+                CardSlot currentCardSlot = m_CardSlots[i];
 
                 //Top left
                 if ((i / m_Width > 0) &&
                     (i % m_Width > 0))
                 {
-                    cardSlot.SetNeightbour(Direction.TopLeft, m_VisualCardSlots[i - m_Width - 1].CardSlot);
+                    currentCardSlot.SetNeightbour(Direction.TopLeft, m_CardSlots[i - m_Width - 1]);
                 }
 
                 //Top center
                 if (i / m_Width > 0)
                 {
-                    cardSlot.SetNeightbour(Direction.TopCenter, m_VisualCardSlots[i - m_Width].CardSlot);
+                    currentCardSlot.SetNeightbour(Direction.TopCenter, m_CardSlots[i - m_Width]);
                 }
 
                 //Top right
                 if ((i / m_Width > 0) &&
                     (i % m_Width < (m_Width - 1)))
                 {
-                    cardSlot.SetNeightbour(Direction.TopRight, m_VisualCardSlots[i - m_Width + 1].CardSlot);
+                    currentCardSlot.SetNeightbour(Direction.TopRight, m_CardSlots[i - m_Width + 1]);
                 }
 
                 //Middle left
                 if (i % m_Width > 0)
                 {
-                    cardSlot.SetNeightbour(Direction.MiddleLeft, m_VisualCardSlots[i - 1].CardSlot);
+                    currentCardSlot.SetNeightbour(Direction.MiddleLeft, m_CardSlots[i - 1]);
                 }
 
                 //Middle right
                 if (i % m_Width < (m_Width - 1))
                 {
-                    cardSlot.SetNeightbour(Direction.MiddleRight, m_VisualCardSlots[i + 1].CardSlot);
+                    currentCardSlot.SetNeightbour(Direction.MiddleRight, m_CardSlots[i + 1]);
                 }
 
                 //Bottom left
                 if ((i / m_Width < (m_Height - 1)) &&
                     (i % m_Width > 0))
                 {
-                    cardSlot.SetNeightbour(Direction.BottomLeft, m_VisualCardSlots[i + m_Width - 1].CardSlot);
+                    currentCardSlot.SetNeightbour(Direction.BottomLeft, m_CardSlots[i + m_Width - 1]);
                 }
 
                 //Bottom center
                 if (i / m_Width < (m_Height - 1))
                 {
-                    cardSlot.SetNeightbour(Direction.BottomCenter, m_VisualCardSlots[i + m_Width].CardSlot);
+                    currentCardSlot.SetNeightbour(Direction.BottomCenter, m_CardSlots[i + m_Width]);
                 }
 
                 //Bottom right
                 if ((i / m_Width < (m_Height - 1)) &&
                     (i % m_Width < (m_Width - 1)))
                 {
-                    cardSlot.SetNeightbour(Direction.BottomRight, m_VisualCardSlots[i + m_Width + 1].CardSlot);
+                    currentCardSlot.SetNeightbour(Direction.BottomRight, m_CardSlots[i + m_Width + 1]);
                 }
 
             }
         }
 
-        public void Analyse()
+        public AnalyseResult Analyse()
         {
             m_AnalyseResults.Clear();
 
-            for (int i = 0; i < m_VisualCardSlots.Count; ++i)
+            for (int i = 0; i < m_CardSlots.Count; ++i)
             {
                 //Check if this slot was already analysed, if so. Skip it! (OPTIMALISATION, DO LATER)
 
                 //Analyse this slot
                 AnalyseResult analyseResult = new AnalyseResult();
-                m_VisualCardSlots[i].CardSlot.Analyse(analyseResult);
+                m_CardSlots[i].Analyse(analyseResult);
 
                 m_AnalyseResults.Add(analyseResult);
             }
 
             m_BestAnalyseResult = CalculateBestResult();
-            m_WorstAnalyseResult = CalculateWorstResult();
 
-            Debug.Log("Red: " + m_BestAnalyseResult.GetNumberOfArrows(CardColor.Red) +
-                      " Green: " + m_BestAnalyseResult.GetNumberOfArrows(CardColor.Green) +
-                      " Blue: " + m_BestAnalyseResult.GetNumberOfArrows(CardColor.Blue));
+            //Debug.Log("Red: " + m_BestAnalyseResult.GetNumberOfArrows(CardColor.Red) +
+            //          " Green: " + m_BestAnalyseResult.GetNumberOfArrows(CardColor.Green) +
+            //          " Blue: " + m_BestAnalyseResult.GetNumberOfArrows(CardColor.Blue));
+
+            return m_BestAnalyseResult;
         }
 
         public void Resolve()
         {
+            foreach (CardSlot cardSlot in m_BestAnalyseResult.InvolvedCardSlots)
+            {
+                //The card on all these slots should move to the discard pile
 
+            }
         }
 
         public bool IsCardSlotInChain(CardSlot cardSlot)
@@ -200,31 +197,6 @@ namespace ArrowCardGame
             }
 
             return bestResult;
-        }
-
-        private AnalyseResult CalculateWorstResult()
-        {
-            AnalyseResult worstResult = null;
-
-            for (int i = 0; i < m_AnalyseResults.Count; ++i)
-            {
-                //Update result
-                if (worstResult == null)
-                {
-                    worstResult = m_AnalyseResults[i];
-                }
-                else if (m_AnalyseResults[i].TotalArrows() < worstResult.TotalArrows())
-                {
-                    worstResult = m_AnalyseResults[i];
-                }
-            }
-
-            return worstResult;
-        }
-
-        private void OnCardSlotUpdated()
-        {
-            Analyse();
         }
     }
 }

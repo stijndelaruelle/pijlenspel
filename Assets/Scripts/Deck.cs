@@ -32,7 +32,23 @@ namespace ArrowCardGame
 
         public void AddCard(Card card)
         {
+            if (m_Cards.Contains(card))
+                return;
+
             m_Cards.Add(card);
+        }
+
+        public void RemoveCard(Card card)
+        {
+            if (m_Cards.Contains(card) == false)
+                return;
+
+            m_Cards.Remove(card);
+        }
+
+        public void SetCards(List<Card> cards)
+        {
+            m_Cards = cards;
         }
 
         public Card DrawCard()

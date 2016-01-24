@@ -32,17 +32,31 @@ namespace ArrowCardGame
             }
         }
 
-        public CardSlot()
+        private bool m_AllowMultipleCards = false;
+
+        public CardSlot(bool allowMultipleCards)
         {
             m_Neighbours = new CardSlot[Table.DIR_NUM];
+            m_AllowMultipleCards = allowMultipleCards;
+        }
+
+        public bool IsEmpty()
+        {
+            return (m_Card == null || m_AllowMultipleCards);
         }
 
         public void Analyse(AnalyseResult analyseResult)
         {
             //Feels a bit weird that the main analyse logic is in the cardslot class, rethink later.
             analyseResult.AddInvolvedCardSlot(this);
+
             if (m_Card == null)
                 return;
+
+            foreach (CardArrow arrow in m_Card.GetArrows())
+            {
+                analyseResult.AddArrows(1, arrow.Color);
+            }
 
             //For every direction
             for (int i = 0; i < Table.DIR_NUM; ++i)
@@ -66,7 +80,7 @@ namespace ArrowCardGame
                             m_Card.CardAnalysed(true, dir);
                             foreach (CardArrow arrow in m_Card.GetArrows((Direction)i))
                             {
-                                analyseResult.AddArrows(1, arrow.Color);
+                                analyseResult.AddInvolvedArrows(1, arrow.Color);
                             }
 
                             //If our neighbour isn't analysed, analyse him

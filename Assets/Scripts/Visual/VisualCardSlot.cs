@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 namespace ArrowCardGame
 {
     public delegate void VoidDelegate();
+    public delegate void IntDelegate();
     public delegate void VoidVisualCardSlotDelegate(VisualCardSlot visualCardSlot);
 
     public class VisualCardSlot : MonoBehaviour, IPointerDownHandler, IDropHandler
@@ -67,12 +68,12 @@ namespace ArrowCardGame
 
         private void Awake()
         {
-            m_CardSlot = new CardSlot();
+            m_CardSlot = new CardSlot(m_AllowMultipleCards);
         }
 
         public bool IsEmpty()
         {
-            return (transform.childCount == 0);
+            return (m_CardSlot.IsEmpty());
         }
 
         public void FireUpdateEvent()

@@ -91,6 +91,11 @@ namespace ArrowCardGame
             return false;
         }
 
+        public List<CardArrow> GetArrows()
+        {
+            return m_CardDefinition.Arrows;
+        }
+
         public List<CardArrow> GetArrows(Direction dir)
         {
             if (m_IsRotated)

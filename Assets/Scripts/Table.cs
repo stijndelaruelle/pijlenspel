@@ -5,81 +5,168 @@ using System.Collections.Generic;
 namespace ArrowCardGame
 {
     //Functions as the GameManager. But I like the name "Table" in this case
+    public delegate void VoidPlayerTypePlayerTypeDelegate(PlayerType playerType1, PlayerType playerType2);
+    public delegate void VoidIntPlayerTypeDelegate(int i, PlayerType playerType);
+
     public class Table : Singleton<Table>
     {
         public static int DIR_NUM = 8;
 
         [SerializeField]
+        private List<Player> m_Players;
+        private int m_CurrentPlayerID = 0;
+
+        [SerializeField]
         private VisualBoard m_Board;
 
         [SerializeField]
-        private VisualDeck m_PlayerHand;
+        private VisualDeck m_DiscardPile;
+
+        //We only store this for the GetVisualCardSlot function
+        [SerializeField]
+        private List<VisualDeck> m_Hands;
 
         [SerializeField]
-        private VisualDeck m_OpponentHand;
+        private List<VisualDeck> m_Decks;
 
-        [SerializeField]
-        private VisualDeck m_RedDeck;
-
-        [SerializeField]
-        private VisualDeck m_GreenDeck;
-
-        [SerializeField]
-        private VisualDeck m_BlueDeck;
-
-        private AIController m_AIController;
-
-        public void Start()
+        //Events
+        private VoidPlayerTypePlayerTypeDelegate m_StartGameEvent;
+        public VoidPlayerTypePlayerTypeDelegate StartGameEvent
         {
-            m_AIController = new AIController(m_Board.Board, m_OpponentHand.Deck, m_RedDeck.Deck, m_GreenDeck.Deck, m_BlueDeck.Deck);
-            StartGame();
+            get { return m_StartGameEvent; }
+            set { m_StartGameEvent = value; }
         }
 
-        public void StartGame()
+        private VoidIntPlayerTypeDelegate m_EndGameEvent;
+        public VoidIntPlayerTypeDelegate EndGameEvent
         {
-            //Draw a starting hand
-            m_PlayerHand.Deck.AddCard(m_RedDeck.Deck.DrawCard());
-            m_PlayerHand.Deck.AddCard(m_GreenDeck.Deck.DrawCard());
-            m_PlayerHand.Deck.AddCard(m_BlueDeck.Deck.DrawCard());
-
-            m_OpponentHand.Deck.AddCard(m_RedDeck.Deck.DrawCard());
-            m_OpponentHand.Deck.AddCard(m_GreenDeck.Deck.DrawCard());
-            m_OpponentHand.Deck.AddCard(m_BlueDeck.Deck.DrawCard());
+            get { return m_EndGameEvent; }
+            set { m_EndGameEvent = value; }
         }
 
-        public void StartTurn(bool player)
+        private VoidIntPlayerTypeDelegate m_StartTurnEvent;
+        public VoidIntPlayerTypeDelegate StartTurnEvent
         {
+            get { return m_StartTurnEvent; }
+            set { m_StartTurnEvent = value; }
+        }
 
+        private VoidDelegate m_EndTurnEvent;
+        public VoidDelegate EndTurnEvent
+        {
+            get { return m_EndTurnEvent; }
+            set { m_EndTurnEvent = value; }
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+            if (m_Players.Count < 2)
+            {
+                Debug.LogError("The table does not have 2 players!");
+            }
+        }
+
+        private void Start()
+        {
+            //Initialize our players
+            for (int i = 0; i < m_Players.Count; ++i)
+            {
+                m_Players[i].Initialize(m_Board, m_Hands[i], m_Decks);
+            }
+
+            StartGame(PlayerType.Human, PlayerType.AI);
+        }
+
+        public void StartGame(PlayerType playerType1, PlayerType playerType2)
+        {
+            m_Players[0].PlayerType = playerType1;
+            m_Players[1].PlayerType = playerType2;
+
+            if (m_StartGameEvent != null)
+                m_StartGameEvent(playerType1, playerType2);
+
+            m_CurrentPlayerID = m_Players.Count - 1;
+            StartTurn();
+        }
+
+        private void EndGame(int winnerPlayerID)
+        {
+            if (m_EndGameEvent != null)
+                m_EndGameEvent(winnerPlayerID, m_Players[winnerPlayerID].PlayerType);
+        }
+
+        public void StartTurn()
+        {
+            m_CurrentPlayerID = GetNextPlayerID(m_CurrentPlayerID);
+            m_Players[m_CurrentPlayerID].IsPlaying = true;
+
+            if (m_StartTurnEvent != null)
+                m_StartTurnEvent(m_CurrentPlayerID, m_Players[m_CurrentPlayerID].PlayerType);
         }
 
         public void EndTurn()
         {
-            m_Board.Resolve();
-            StartCoroutine(AIPlayRoutine());
+            ArrowResult result = m_Board.Resolve(m_DiscardPile);
+
+            if (result.redArrows != 0 || result.blueArrows != 0)
+            {
+                //Attack
+                if (result.redArrows > result.blueArrows)
+                {
+                    int nextPlayerID = GetNextPlayerID(m_CurrentPlayerID);
+                    m_Players[nextPlayerID].DamageableObject.ModifyHealth(-result.redArrows);
+                }
+                
+                //Heal
+                if (result.redArrows < result.blueArrows)
+                {
+                    m_Players[m_CurrentPlayerID].DamageableObject.ModifyHealth(result.blueArrows);
+                }
+
+                //Decide
+                if (result.redArrows == result.blueArrows)
+                {
+                    //For now ALWAYS ATTACK
+                    int nextPlayerID = GetNextPlayerID(m_CurrentPlayerID);
+                    m_Players[nextPlayerID].DamageableObject.ModifyHealth(-result.redArrows);
+                }
+            }
+
+            if (m_EndTurnEvent != null)
+                m_EndTurnEvent();
+
+            m_Players[m_CurrentPlayerID].IsPlaying = false;
+
+            if (!CheckForGameOver())
+                StartTurn();
         }
 
-        private IEnumerator AIPlayRoutine() 
+        private bool CheckForGameOver()
         {
-            //Disable all the decks & the player's hand.
-            m_PlayerHand.AllowClicks(false);
+            for (int i = 0; i < m_Players.Count; ++i)
+            {
+                if (m_Players[i].DamageableObject.Health <= 0)
+                {
+                    int winnerPlayerId = GetNextPlayerID(i);
+                    EndGame(winnerPlayerId);
+                    return true;
+                }
+            }
 
-            m_RedDeck.AllowClicks(false);
-            m_GreenDeck.AllowClicks(false);
-            m_BlueDeck.AllowClicks(false);
-            
-
-            //Give the player a bit of time to see what happened (resolve)
-            yield return new WaitForSeconds(0.5f);
-
-            m_AIController.DrawCard();
-            m_AIController.CalculateMove();
-
-            //Give the player a bit of time to see what card the AI drew
-            yield return new WaitForSeconds(1.0f);
-
-            m_AIController.PlayMove();
+            return false;
         }
 
+        public void AllowCardDrawing(bool state)
+        {
+            for (int i = 0; i < m_Decks.Count; ++i)
+            {
+                m_Decks[i].AllowClicks(state);
+            }
+        }
+
+
+        //Utility, shouldn't be here?
         public VisualCardSlot GetVisualCardSlot(CardSlot cardSlot)
         {
             VisualCardSlot visualCardSlot;
@@ -88,20 +175,20 @@ namespace ArrowCardGame
             visualCardSlot = m_Board.GetVisualCardSlot(cardSlot);
             if (visualCardSlot != null) return visualCardSlot;
 
-            visualCardSlot = m_PlayerHand.GetVisualCardSlot(cardSlot);
+            visualCardSlot = m_DiscardPile.GetVisualCardSlot(cardSlot);
             if (visualCardSlot != null) return visualCardSlot;
 
-            visualCardSlot = m_OpponentHand.GetVisualCardSlot(cardSlot);
-            if (visualCardSlot != null) return visualCardSlot;
+            foreach (VisualDeck visualDeck in m_Hands)
+            {
+                visualCardSlot = visualDeck.GetVisualCardSlot(cardSlot);
+                if (visualCardSlot != null) return visualCardSlot;
+            }
 
-            visualCardSlot = m_RedDeck.GetVisualCardSlot(cardSlot);
-            if (visualCardSlot != null) return visualCardSlot;
-
-            visualCardSlot = m_GreenDeck.GetVisualCardSlot(cardSlot);
-            if (visualCardSlot != null) return visualCardSlot;
-
-            visualCardSlot = m_BlueDeck.GetVisualCardSlot(cardSlot);
-            if (visualCardSlot != null) return visualCardSlot;
+            foreach (VisualDeck visualDeck in m_Decks)
+            {
+                visualCardSlot = visualDeck.GetVisualCardSlot(cardSlot);
+                if (visualCardSlot != null) return visualCardSlot;
+            }
 
             return null;
         }
@@ -110,6 +197,11 @@ namespace ArrowCardGame
         {
             Direction rotatedDir = (Direction)(((int)dir + 4) % Table.DIR_NUM);
             return rotatedDir;
+        }
+
+        private int GetNextPlayerID(int playerID)
+        {
+            return (playerID + 1) % m_Players.Count;
         }
     }
 }

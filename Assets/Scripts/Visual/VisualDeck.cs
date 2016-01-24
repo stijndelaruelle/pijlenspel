@@ -33,8 +33,8 @@ namespace ArrowCardGame
         }
 
         //Event
-        private event VoidVisualCardSlotDelegate m_DrawCardEvent;
-        public VoidVisualCardSlotDelegate DrawCardEvent
+        private event VoidDelegate m_DrawCardEvent;
+        public VoidDelegate DrawCardEvent
         {
             get { return m_DrawCardEvent; }
             set { m_DrawCardEvent = value; }
@@ -42,20 +42,21 @@ namespace ArrowCardGame
 
         private void Start()
         {
+            List<CardSlot> cardSlots = new List<CardSlot>();
+
             foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
             {
                 visualCardSlot.VisualCardSlotUpdatedEvent += OnCardSlotUpdated;
+                cardSlots.Add(visualCardSlot.CardSlot);
             }
 
             if (m_DeckDefinition == null)
             {
-                m_Deck = new Deck();
-                m_Deck.CardAddedEvent += OnCardAdded;
+                m_Deck = new Deck(cardSlots);
                 return;
             }
 
-            m_Deck = new Deck(m_DeckDefinition);
-            m_Deck.CardAddedEvent += OnCardAdded;
+            m_Deck = new Deck(m_DeckDefinition, cardSlots);
 
             m_VisualCards = new List<VisualCard>();
 
@@ -80,18 +81,16 @@ namespace ArrowCardGame
             {
                 visualCardSlot.VisualCardSlotUpdatedEvent -= OnCardSlotUpdated;
             }
-
-            m_Deck.CardAddedEvent -= OnCardAdded;
         }
 
         public void AllowClicks(bool state)
         {
-            //m_CanvasGroup.blocksRaycasts = state;
+            m_CanvasGroup.blocksRaycasts = state;
         }
 
-        private void OnCardAdded(Card card)
+        public int NumberOfCards()
         {
-            card.CardSlot = FirstEmptySlot().CardSlot;
+            return m_Deck.Cards.Count;
         }
 
         private void OnCardSlotUpdated(VisualCardSlot updatedVisualCardSlot)
@@ -103,7 +102,12 @@ namespace ArrowCardGame
             {
                 //Exclude the decks SUPER LAME
                 if (visualCardSlot.AllowMultipleCards)
+                {
+                    if (m_DrawCardEvent != null)
+                        m_DrawCardEvent();
                     return;
+                }
+                    
 
                 VisualCard visualCard = visualCardSlot.VisualCard;
                 if (visualCard != null)

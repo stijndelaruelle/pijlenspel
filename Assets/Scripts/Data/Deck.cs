@@ -16,19 +16,15 @@ namespace ArrowCardGame
             set { m_Cards = value; }
         }
 
-        private VoidCardDelegate m_CardAddedEvent;
-        public VoidCardDelegate CardAddedEvent
-        {
-            get { return m_CardAddedEvent; }
-            set { m_CardAddedEvent = value; }
-        }
+        private List<CardSlot> m_CardSlots;
 
-        public Deck()
+        public Deck(List<CardSlot> cardSlots)
         {
             m_Cards = new List<Card>();
+            m_CardSlots = cardSlots;
         }
 
-        public Deck(DeckDefinition deckDefinition)
+        public Deck(DeckDefinition deckDefinition, List<CardSlot> cardSlots)
         {
             m_Cards = new List<Card>();
 
@@ -38,6 +34,8 @@ namespace ArrowCardGame
                 Card newCard = new Card(cardDef);
                 m_Cards.Add(newCard);
             }
+
+            m_CardSlots = cardSlots;
         }
 
         public void AddCard(Card card)
@@ -46,9 +44,7 @@ namespace ArrowCardGame
                 return;
 
             m_Cards.Add(card);
-
-            if (m_CardAddedEvent != null)
-                m_CardAddedEvent(card);
+            card.CardSlot = FirstEmptySlot();
         }
 
         public void RemoveCard(Card card)
@@ -79,6 +75,17 @@ namespace ArrowCardGame
 
             //Sort the tiers
             //...
+        }
+
+        public CardSlot FirstEmptySlot()
+        {
+            foreach (CardSlot cardSlot in m_CardSlots)
+            {
+                if (cardSlot.IsEmpty())
+                    return cardSlot;
+            }
+
+            return null;
         }
     }
 }

@@ -48,9 +48,9 @@ namespace ArrowCardGame
             }
         }
 
-        public void Resolve()
+        public ArrowResult Resolve(VisualDeck discardPile)
         {
-            m_Board.Resolve();
+            return m_Board.Resolve(discardPile.Deck);
         }
 
         public VisualCardSlot GetVisualCardSlot(CardSlot cardSlot)

@@ -43,49 +43,26 @@ namespace ArrowCardGame
 
         private Board m_Board;
         private Deck m_Hand;
-        private Deck m_RedDeck;
-        private Deck m_GreenDeck;
-        private Deck m_BlueDeck;
+        private List<Deck> m_Decks;
 
         private AIAnalyseResult m_PreferredMove;
 
-        public AIController(Board board, Deck hand, Deck redDeck, Deck greenDeck, Deck blueDeck)
+        public AIController(Board board, Deck hand, List<Deck> decks)
         {
             m_Board = board;
             m_Hand = hand;
-            m_RedDeck = redDeck;
-            m_GreenDeck = greenDeck;
-            m_BlueDeck = blueDeck;
+            m_Decks = decks;
         }
 
         public void DrawCard()
         {
             //Don't care about empty decks!
 
-            float rand = Random.RandomRange(0.0f, 100.0f);
+            float rand = Random.Range(0.0f, 100.0f);
             int colorId = (int)rand / 33;
-            CardColor cardColor = (CardColor)colorId;
 
-            Card card = null;
+            Card card = m_Decks[colorId].DrawCard();
 
-            switch (cardColor)
-            {
-                case CardColor.Red:
-                    card = m_RedDeck.DrawCard();
-                    break;
-                    
-                case CardColor.Green:
-                    card = m_GreenDeck.DrawCard();
-                    break;
-
-                case CardColor.Blue:
-                    card = m_BlueDeck.DrawCard();
-                    break;
-
-                default:
-                    break;
-            }
-            
             if (card != null)
                 m_Hand.AddCard(card);
         }
@@ -139,29 +116,29 @@ namespace ArrowCardGame
                 {
                     m_PreferredMove = analyseResults[i];
                 }
-                else if (analyseResults[i].AnalyseResult.TotalArrows() > m_PreferredMove.AnalyseResult.TotalArrows())
+                else if (analyseResults[i].AnalyseResult.TotalInvolvedArrows() > m_PreferredMove.AnalyseResult.TotalInvolvedArrows())
                 {
                     m_PreferredMove = analyseResults[i];
                 }
             }
 
             //We're unable to make a chain! Just do the worst possible move then.
-            //if (preferredMove.AnalyseResult.TotalArrows() < 3)
-            //{
-            //    //Get the worst Result
-            //    for (int i = 0; i < analyseResults.Count; ++i)
-            //    {
-            //        //Update result
-            //        if (preferredMove == null)
-            //        {
-            //            preferredMove = analyseResults[i];
-            //        }
-            //        else if (analyseResults[i].AnalyseResult.TotalArrows() < preferredMove.AnalyseResult.TotalArrows())
-            //        {
-            //            preferredMove = analyseResults[i];
-            //        }
-            //    }
-            //}
+            if (m_PreferredMove.AnalyseResult.TotalInvolvedArrows() < 3)
+            {
+                //Get the worst Result
+                for (int i = 0; i < analyseResults.Count; ++i)
+                {
+                    //Update result
+                    if (m_PreferredMove == null)
+                    {
+                        m_PreferredMove = analyseResults[i];
+                    }
+                    else if (analyseResults[i].AnalyseResult.TotalArrows() < m_PreferredMove.AnalyseResult.TotalArrows())
+                    {
+                        m_PreferredMove = analyseResults[i];
+                    }
+                }
+            }
         }
 
         public void PlayMove()

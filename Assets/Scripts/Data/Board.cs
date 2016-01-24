@@ -11,12 +11,14 @@ namespace ArrowCardGame
             get { return m_InvolvedCardSlots; }
         }
 
+        private int[] m_NumInvolvedArrows;
         private int[] m_NumArrows;
 
         public AnalyseResult()
         {
             m_InvolvedCardSlots = new List<CardSlot>();
-            m_NumArrows = new int[3]; //3 colors
+            m_NumInvolvedArrows = new int[3]; //3 colors
+            m_NumArrows = new int[3];
         }
 
         //Mutators
@@ -25,11 +27,18 @@ namespace ArrowCardGame
             m_InvolvedCardSlots.Add(cardSlot);
         }
 
+        public void AddInvolvedArrows(int amount, CardColor cardColor)
+        {
+            int cardColorID = (int)cardColor;
+            m_NumInvolvedArrows[cardColorID] += amount;
+        }
+
         public void AddArrows(int amount, CardColor cardColor)
         {
             int cardColorID = (int)cardColor;
             m_NumArrows[cardColorID] += amount;
         }
+
 
         //Accesors
         public bool IsCardSlotInvolved(CardSlot cardSlot)
@@ -37,10 +46,26 @@ namespace ArrowCardGame
             return m_InvolvedCardSlots.Contains(cardSlot);
         }
 
+        public int GetNumberInvolvedOfArrows(CardColor cardColor)
+        {
+            int cardColorID = (int)cardColor;
+            return m_NumInvolvedArrows[cardColorID];
+        }
+
         public int GetNumberOfArrows(CardColor cardColor)
         {
             int cardColorID = (int)cardColor;
             return m_NumArrows[cardColorID];
+        }
+
+        public int TotalInvolvedArrows()
+        {
+            int totalArrows = 0;
+            totalArrows += GetNumberInvolvedOfArrows(CardColor.Red);
+            totalArrows += GetNumberInvolvedOfArrows(CardColor.Green);
+            totalArrows += GetNumberInvolvedOfArrows(CardColor.Blue);
+
+            return totalArrows;
         }
 
         public int TotalArrows()
@@ -52,6 +77,18 @@ namespace ArrowCardGame
 
             return totalArrows;
         }
+    }
+
+    public struct ArrowResult
+    {
+        public ArrowResult(int redArrows, int blueArrows)
+        {
+            this.redArrows = redArrows;
+            this.blueArrows = blueArrows;
+        }
+
+        public int redArrows;
+        public int blueArrows;
     }
 
     public class Board
@@ -165,13 +202,21 @@ namespace ArrowCardGame
             return m_BestAnalyseResult;
         }
 
-        public void Resolve()
+        public ArrowResult Resolve(Deck discardPile)
         {
-            //foreach (CardSlot cardSlot in m_BestAnalyseResult.InvolvedCardSlots)
-            //{
-            //    //The card on all these slots should move to the discard pile
+            if (m_BestAnalyseResult.TotalInvolvedArrows() < 3)
+                return new ArrowResult(0, 0);
 
-            //}
+            int redArrows = m_BestAnalyseResult.GetNumberInvolvedOfArrows(CardColor.Red);
+            int blueArrows = m_BestAnalyseResult.GetNumberInvolvedOfArrows(CardColor.Blue);
+
+            foreach (CardSlot cardSlot in m_BestAnalyseResult.InvolvedCardSlots)
+            {
+                //The card on all these slots should move to the discard pile
+                cardSlot.Card.CardSlot = discardPile.FirstEmptySlot();
+            }
+
+            return new ArrowResult(redArrows, blueArrows);
         }
 
         public bool IsCardSlotInChain(CardSlot cardSlot)
@@ -190,9 +235,12 @@ namespace ArrowCardGame
                 {
                     bestResult = m_AnalyseResults[i];
                 }
-                else if (m_AnalyseResults[i].TotalArrows() > bestResult.TotalArrows())
+                else if (m_AnalyseResults[i].TotalInvolvedArrows() >= bestResult.TotalInvolvedArrows())
                 {
-                    bestResult = m_AnalyseResults[i];
+                    if (m_AnalyseResults[i].TotalArrows() > bestResult.TotalArrows())
+                    {
+                        bestResult = m_AnalyseResults[i];
+                    }
                 }
             }
 

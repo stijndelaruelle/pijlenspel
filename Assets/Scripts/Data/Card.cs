@@ -27,7 +27,8 @@ namespace ArrowCardGame
                         m_CardSlot.Card = null;
 
                     m_CardSlot = value;
-                    
+                    m_PlacedThisTurn = true;
+
                     if (m_CardSlot != null)
                         m_CardSlot.Card = this;
 
@@ -41,6 +42,13 @@ namespace ArrowCardGame
         public bool IsRotated
         {
             get { return m_IsRotated; }
+        }
+
+        private bool m_PlacedThisTurn = false;
+        public bool PlacedThisTurn
+        {
+            get { return m_PlacedThisTurn; }
+            set { m_PlacedThisTurn = value; }
         }
 
         //Event
@@ -61,6 +69,14 @@ namespace ArrowCardGame
         public Card(CardDefinition cardDefinition)
         {
             m_CardDefinition = cardDefinition;
+        }
+
+        public void Resolve(CardSlot discardPile)
+        {
+            if (m_PlacedThisTurn)
+                return;
+
+            CardSlot = discardPile;
         }
 
         public void Rotate()

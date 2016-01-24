@@ -68,5 +68,9 @@ namespace ArrowCardGame
             m_Text.text = sentence;
         }
 
+        public void PlayAgain()
+        {
+            Table.Instance.StartGame();
+        }
     }
 }

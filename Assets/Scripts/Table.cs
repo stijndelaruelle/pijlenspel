@@ -78,10 +78,20 @@ namespace ArrowCardGame
             StartGame(PlayerType.Human, PlayerType.AI);
         }
 
+        public void StartGame()
+        {
+            StartGame(m_Players[0].PlayerType, m_Players[1].PlayerType);
+        }
+
         public void StartGame(PlayerType playerType1, PlayerType playerType2)
         {
             m_Players[0].PlayerType = playerType1;
             m_Players[1].PlayerType = playerType2;
+
+            foreach (VisualDeck visualDeck in m_Decks)
+            {
+                visualDeck.Deck.ResetDeck();
+            }
 
             if (m_StartGameEvent != null)
                 m_StartGameEvent(playerType1, playerType2);

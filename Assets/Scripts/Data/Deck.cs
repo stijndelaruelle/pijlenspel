@@ -16,6 +16,9 @@ namespace ArrowCardGame
             set { m_Cards = value; }
         }
 
+        //Used for resetting the game
+        private List<Card> m_BackupCards;
+
         private List<CardSlot> m_CardSlots;
 
         public Deck(List<CardSlot> cardSlots)
@@ -27,12 +30,14 @@ namespace ArrowCardGame
         public Deck(DeckDefinition deckDefinition, List<CardSlot> cardSlots)
         {
             m_Cards = new List<Card>();
+            m_BackupCards = new List<Card>();
 
             //Create all the cards
             foreach (CardDefinition cardDef in deckDefinition.CardDefinitions)
             {
                 Card newCard = new Card(cardDef);
                 m_Cards.Add(newCard);
+                m_BackupCards.Add(newCard);
             }
 
             m_CardSlots = cardSlots;
@@ -67,6 +72,17 @@ namespace ArrowCardGame
             Debug.LogError("Drawing from a deck with no cards!");
             return null;
         }
+
+        public void ResetDeck()
+        {
+            m_Cards.Clear();
+
+            foreach(Card card in m_BackupCards)
+            {
+                AddCard(card);
+            }
+        }
+
 
         public void ShuffleDeck()
         {

@@ -204,14 +204,19 @@ namespace ArrowCardGame
 
         public ArrowResult Resolve(Deck discardPile)
         {
-            int redArrows = m_BestAnalyseResult.GetNumberInvolvedOfArrows(CardColor.Red);
-            int blueArrows = m_BestAnalyseResult.GetNumberInvolvedOfArrows(CardColor.Blue);
+            int redArrows = 0;
+            int blueArrows = 0;
 
-            foreach (CardSlot cardSlot in m_BestAnalyseResult.InvolvedCardSlots)
+            if (m_BestAnalyseResult.TotalInvolvedArrows() >= 3)
             {
-                //The card on all these slots should move to the discard pile
-                if (cardSlot.Card != null)
+                redArrows = m_BestAnalyseResult.GetNumberInvolvedOfArrows(CardColor.Red);
+                blueArrows = m_BestAnalyseResult.GetNumberInvolvedOfArrows(CardColor.Blue);
+
+                foreach (CardSlot cardSlot in m_BestAnalyseResult.InvolvedCardSlots)
+                {
+                    //The card on all these slots should move to the discard pile
                     cardSlot.Card.Resolve(discardPile.FirstEmptySlot());
+                }
             }
 
             foreach (CardSlot cardSlot in m_CardSlots)

@@ -8,6 +8,14 @@ namespace ArrowCardGame
 
     public class Card
     {
+        //STATIC
+        private static Card m_LastPlayedCard = null;
+        public static Card LastPlayedCard
+        {
+            get { return m_LastPlayedCard; }
+            set { m_LastPlayedCard = value; }
+        }
+
         private CardDefinition m_CardDefinition;
         public CardDefinition CardDefinition
         {
@@ -27,7 +35,6 @@ namespace ArrowCardGame
                         m_CardSlot.Card = null;
 
                     m_CardSlot = value;
-                    m_PlacedThisTurn = true;
 
                     if (m_CardSlot != null)
                         m_CardSlot.Card = this;
@@ -42,13 +49,6 @@ namespace ArrowCardGame
         public bool IsRotated
         {
             get { return m_IsRotated; }
-        }
-
-        private bool m_PlacedThisTurn = false;
-        public bool PlacedThisTurn
-        {
-            get { return m_PlacedThisTurn; }
-            set { m_PlacedThisTurn = value; }
         }
 
         //Event
@@ -73,10 +73,8 @@ namespace ArrowCardGame
 
         public void Resolve(CardSlot discardPile)
         {
-            if (m_PlacedThisTurn)
-                return;
-
-            CardSlot = discardPile;
+            if (Card.LastPlayedCard != this)
+                CardSlot = discardPile;
         }
 
         public void Rotate()

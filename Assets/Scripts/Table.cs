@@ -75,7 +75,7 @@ namespace ArrowCardGame
                 m_Players[i].Initialize(m_Board, m_Hands[i], m_Decks);
             }
 
-            StartGame(PlayerType.Human, PlayerType.AI);
+            //StartGame(PlayerType.Human, PlayerType.AI);
         }
 
         public void StartGame()

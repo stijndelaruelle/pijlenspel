@@ -144,8 +144,12 @@ namespace ArrowCardGame
         public void PlayMove()
         {
             //Play that move!
-            m_PreferredMove.Card.Rotate(m_PreferredMove.Rotated);
-            m_PreferredMove.Card.CardSlot = m_PreferredMove.CardSlot;
+            Card card = m_PreferredMove.Card;
+            card.Rotate(m_PreferredMove.Rotated);
+            card.CardSlot = m_PreferredMove.CardSlot;
+
+            Card.LastPlayedCard = card;
+
             m_Board.Analyse(); //Analyse to update everything
 
             m_Hand.RemoveCard(m_PreferredMove.Card);

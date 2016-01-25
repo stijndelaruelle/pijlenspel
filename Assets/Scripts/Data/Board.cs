@@ -204,6 +204,9 @@ namespace ArrowCardGame
 
         public ArrowResult Resolve(Deck discardPile)
         {
+            if (m_BestAnalyseResult == null)
+                return new ArrowResult(0, 0);
+
             int redArrows = 0;
             int blueArrows = 0;
 
@@ -217,12 +220,6 @@ namespace ArrowCardGame
                     //The card on all these slots should move to the discard pile
                     cardSlot.Card.Resolve(discardPile.FirstEmptySlot());
                 }
-            }
-
-            foreach (CardSlot cardSlot in m_CardSlots)
-            {
-                if (cardSlot.Card != null)
-                    cardSlot.Card.PlacedThisTurn = false;
             }
 
             return new ArrowResult(redArrows, blueArrows);

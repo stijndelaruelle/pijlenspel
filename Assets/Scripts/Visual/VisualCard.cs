@@ -8,7 +8,13 @@ namespace ArrowCardGame
 {
     public class VisualCard : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
-        public static VisualCard m_DraggedCard = null;
+        //STATIC
+        private static VisualCard m_DraggedCard = null;
+        public static VisualCard DraggedCard
+        {
+            get { return m_DraggedCard; }
+            set { m_DraggedCard = value; }
+        }
 
         [SerializeField]
         private Image m_Image;
@@ -137,6 +143,9 @@ namespace ArrowCardGame
 
             SetParent(m_VisualCardSlot.transform, 1.0f);
             FaceUp(m_VisualCardSlot.FaceUp);
+
+            //We played the card ourselves!
+            Card.LastPlayedCard = this.Card;
         }
 
         public void SetVisualCardSlot(VisualCardSlot visualCardSlot)

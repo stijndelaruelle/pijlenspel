@@ -17,13 +17,6 @@ namespace ArrowCardGame
             get { return m_FaceUp; }
         }
 
-        [SerializeField]
-        private bool m_AllowMultipleCards = false;
-        public bool AllowMultipleCards
-        {
-            get { return m_AllowMultipleCards; }
-        }
-
         private CardSlot m_CardSlot;
         public CardSlot CardSlot
         {
@@ -68,7 +61,7 @@ namespace ArrowCardGame
 
         private void Awake()
         {
-            m_CardSlot = new CardSlot(m_AllowMultipleCards);
+            m_CardSlot = new CardSlot();
         }
 
         public bool IsEmpty()
@@ -99,12 +92,12 @@ namespace ArrowCardGame
             //Debug.Log("We dropped a card on the board!");
 
             //We only accept 1 card
-            if (!m_AllowMultipleCards && transform.childCount > 0)
+            if (transform.childCount > 0)
                 return;
 
-            if (VisualCard.m_DraggedCard != null)
+            if (VisualCard.DraggedCard != null)
             {
-                VisualCard.m_DraggedCard.SetVisualCardSlot(this);
+                VisualCard.DraggedCard.SetVisualCardSlot(this);
             }
         }
     }

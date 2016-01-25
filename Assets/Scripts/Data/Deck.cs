@@ -16,31 +16,34 @@ namespace ArrowCardGame
             set { m_Cards = value; }
         }
 
+        //Event
+        private event VoidDelegate m_CardSlotAddedEvent;
+        public VoidDelegate CardSlotAddedEvent
+        {
+            get { return m_CardSlotAddedEvent; }
+            set { m_CardSlotAddedEvent = value; }
+        }
+
         //Used for resetting the game
         private List<Card> m_BackupCards;
 
         private List<CardSlot> m_CardSlots;
 
-        public Deck(List<CardSlot> cardSlots)
-        {
-            m_Cards = new List<Card>();
-            m_CardSlots = cardSlots;
-        }
-
-        public Deck(DeckDefinition deckDefinition, List<CardSlot> cardSlots)
-        {
+        public Deck(DeckDefinition deckDefinition)
+        {   
             m_Cards = new List<Card>();
             m_BackupCards = new List<Card>();
 
             //Create all the cards
-            foreach (CardDefinition cardDef in deckDefinition.CardDefinitions)
+            if (deckDefinition != null)
             {
-                Card newCard = new Card(cardDef);
-                m_Cards.Add(newCard);
-                m_BackupCards.Add(newCard);
+                foreach (CardDefinition cardDef in deckDefinition.CardDefinitions)
+                {
+                    Card newCard = new Card(cardDef);
+                    m_Cards.Add(newCard);
+                    m_BackupCards.Add(newCard);
+                }
             }
-
-            m_CardSlots = cardSlots;
         }
 
         public void AddCard(Card card)
@@ -69,7 +72,7 @@ namespace ArrowCardGame
                 return card;
             }
 
-            Debug.LogError("Drawing from a deck with no cards!");
+            Debug.LogWarning("Drawing from a deck with no cards!");
             return null;
         }
 
@@ -79,10 +82,10 @@ namespace ArrowCardGame
 
             foreach(Card card in m_BackupCards)
             {
+                card.CardSlot = null;
                 AddCard(card);
             }
         }
-
 
         public void ShuffleDeck()
         {
@@ -91,6 +94,15 @@ namespace ArrowCardGame
 
             //Sort the tiers
             //...
+        }
+
+
+        public void AddCardSlot(CardSlot cardSlot)
+        {
+            if (m_CardSlots == null)
+                m_CardSlots = new List<CardSlot>();
+
+            m_CardSlots.Add(cardSlot);
         }
 
         public CardSlot FirstEmptySlot()

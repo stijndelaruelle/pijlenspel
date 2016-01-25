@@ -14,7 +14,10 @@ namespace ArrowCardGame
         private List<VisualCard> m_VisualCards;
 
         [SerializeField]
-        private List<VisualCardSlot> m_VisualCardSlots;
+        private VisualCardSlot m_VisualCardSlotPrefab;
+
+        [SerializeField]
+        private int m_MinNumberOfVisualCardSlots = 0;
 
         //Variables for the instantiated cards
         [SerializeField]
@@ -32,6 +35,8 @@ namespace ArrowCardGame
             get { return m_Deck; }
         }
 
+        private List<VisualCardSlot> m_VisualCardSlots;
+
         //Event
         private event VoidDelegate m_DrawCardEvent;
         public VoidDelegate DrawCardEvent
@@ -40,25 +45,26 @@ namespace ArrowCardGame
             set { m_DrawCardEvent = value; }
         }
 
+        private void Awake()
+        {
+            m_VisualCardSlots = new List<VisualCardSlot>();
+            m_VisualCards = new List<VisualCard>();
+        }
+
         private void Start()
         {
-            List<CardSlot> cardSlots = new List<CardSlot>();
+            m_Deck = new Deck(m_DeckDefinition);
+            m_Deck.CardSlotAddedEvent += OnCardSlotDataAdded;
 
-            foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
+            for (int i = 0; i < m_MinNumberOfVisualCardSlots; ++i)
             {
+                VisualCardSlot visualCardSlot = AddVisualCardSlot();
                 visualCardSlot.VisualCardSlotUpdatedEvent += OnCardSlotUpdated;
-                cardSlots.Add(visualCardSlot.CardSlot);
             }
 
+            //Create all the cards
             if (m_DeckDefinition == null)
-            {
-                m_Deck = new Deck(cardSlots);
                 return;
-            }
-
-            m_Deck = new Deck(m_DeckDefinition, cardSlots);
-
-            m_VisualCards = new List<VisualCard>();
 
             List<Card> cards = m_Deck.Cards;
             for (int i = cards.Count - 1; i >= 0; --i)
@@ -67,7 +73,17 @@ namespace ArrowCardGame
 
                 newVisualCard.Initialize(cards[i], m_TableRoot, m_PlayerHand);
 
-                VisualCardSlot emptyCardSlot = FirstEmptySlot();
+                VisualCardSlot emptyCardSlot;
+                
+                if (i < m_VisualCardSlots.Count)
+                {
+                    emptyCardSlot = FirstEmptySlot();
+                }
+                else
+                {
+                    emptyCardSlot = AddVisualCardSlot();
+                }
+
                 newVisualCard.SetVisualCardSlot(emptyCardSlot);
                 newVisualCard.SetParent(emptyCardSlot.transform, 1.0f);
 
@@ -81,6 +97,9 @@ namespace ArrowCardGame
             {
                 visualCardSlot.VisualCardSlotUpdatedEvent -= OnCardSlotUpdated;
             }
+
+            if (m_Deck != null)
+                m_Deck.CardSlotAddedEvent -= OnCardSlotDataAdded;
         }
 
         public void AllowClicks(bool state)
@@ -100,14 +119,8 @@ namespace ArrowCardGame
 
             foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
             {
-                //Exclude the decks SUPER LAME
-                if (visualCardSlot.AllowMultipleCards)
-                {
-                    if (m_DrawCardEvent != null)
-                        m_DrawCardEvent();
-                    return;
-                }
-                    
+                if (m_DrawCardEvent != null)
+                    m_DrawCardEvent();
 
                 VisualCard visualCard = visualCardSlot.VisualCard;
                 if (visualCard != null)
@@ -117,15 +130,39 @@ namespace ArrowCardGame
             m_Deck.Cards = cards;
         }
 
+        private void OnCardSlotDataAdded()
+        {
+            AddVisualCardSlot();
+        }
+
         public VisualCardSlot FirstEmptySlot()
         {
             foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
             {
-                if (visualCardSlot.IsEmpty() || visualCardSlot.AllowMultipleCards)
+                if (visualCardSlot.IsEmpty())
                     return visualCardSlot;
             }
 
-            return null;
+            //No empty slots were found create a new one
+            return AddVisualCardSlot();
+        }
+
+        private VisualCardSlot AddVisualCardSlot()
+        {
+            VisualCardSlot visualCardSlot = GameObject.Instantiate(m_VisualCardSlotPrefab) as VisualCardSlot;
+            visualCardSlot.VisualCardSlotUpdatedEvent += OnCardSlotUpdated;
+
+            visualCardSlot.gameObject.transform.SetParent(transform);
+            visualCardSlot.gameObject.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
+            visualCardSlot.gameObject.transform.localRotation = Quaternion.identity;
+            visualCardSlot.gameObject.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+
+            visualCardSlot.gameObject.name = gameObject.name + ": Cardslot";
+            m_VisualCardSlots.Add(visualCardSlot);
+
+            m_Deck.AddCardSlot(visualCardSlot.CardSlot);
+
+            return visualCardSlot;
         }
 
         public VisualCardSlot GetVisualCardSlot(CardSlot cardSlot)

@@ -32,17 +32,14 @@ namespace ArrowCardGame
             }
         }
 
-        private bool m_AllowMultipleCards = false;
-
-        public CardSlot(bool allowMultipleCards)
+        public CardSlot()
         {
             m_Neighbours = new CardSlot[Table.DIR_NUM];
-            m_AllowMultipleCards = allowMultipleCards;
         }
 
         public bool IsEmpty()
         {
-            return (m_Card == null || m_AllowMultipleCards);
+            return (m_Card == null);
         }
 
         public void Analyse(AnalyseResult analyseResult)

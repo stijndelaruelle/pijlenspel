@@ -67,7 +67,7 @@ namespace ArrowCardGame
         {
             if (m_Cards.Count > 0)
             {
-                Card card = m_Cards[0];
+                Card card = m_Cards[m_Cards.Count - 1];
                 m_Cards.Remove(card);
                 return card;
             }
@@ -80,8 +80,9 @@ namespace ArrowCardGame
         {
             m_Cards.Clear();
 
-            foreach(Card card in m_BackupCards)
+            for (int i = m_BackupCards.Count - 1; i >= 0; --i)
             {
+                Card card = m_BackupCards[i];
                 card.CardSlot = null;
                 AddCard(card);
             }

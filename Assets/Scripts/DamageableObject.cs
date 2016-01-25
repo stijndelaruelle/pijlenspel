@@ -47,6 +47,9 @@ namespace ArrowCardGame
             if (m_Health < 0)
                 m_Health = 0;
 
+            if (m_Health > m_MaxHealth)
+                m_Health = m_MaxHealth;
+
             if (m_HealthChangedEvent != null)
                 m_HealthChangedEvent(oldHealthValue, m_Health);
         }

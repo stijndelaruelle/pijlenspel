@@ -11,6 +11,7 @@ namespace ArrowCardGame
 
         private bool m_AllPlayersAreHuman;
         private bool m_AllPlayersAreAI;
+        private Coroutine m_RoutineHandle;
 
         private void Start()
         {
@@ -43,6 +44,9 @@ namespace ArrowCardGame
 
         private void OnStartTurn(int playerID, PlayerType playerType)
         {
+            if (m_RoutineHandle != null)
+                StopCoroutine(m_RoutineHandle);
+
             string sentence = "";
             if (m_AllPlayersAreHuman)
             {
@@ -67,7 +71,7 @@ namespace ArrowCardGame
             m_Text.enabled = true;
             m_Text.text = sentence;
 
-            StartCoroutine(FadeOutRoutine());
+            m_RoutineHandle = StartCoroutine(FadeOutRoutine());
         }
 
         private IEnumerator FadeOutRoutine()

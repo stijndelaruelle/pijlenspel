@@ -59,7 +59,9 @@ namespace ArrowCardGame
             //Don't care about empty decks!
 
             float rand = Random.Range(0.0f, 100.0f);
-            int colorId = (int)rand / 33;
+            int colorId = (int)rand / (100 / 3);
+
+            colorId = Mathf.Clamp(colorId, 0, 2);
 
             Card card = m_Decks[colorId].DrawCard();
 

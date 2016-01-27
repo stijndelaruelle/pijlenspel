@@ -8,16 +8,37 @@ namespace ArrowCardGame
     public delegate void VoidPlayerTypePlayerTypeDelegate(PlayerType playerType1, PlayerType playerType2);
     public delegate void VoidIntPlayerTypeDelegate(int i, PlayerType playerType);
 
+    public enum TurnPhaseType
+    {
+        Draw = 0,
+        PlayCard = 1,
+        PlayedCard = 2,
+        Resolve = 3
+    }
+
     public class Table : Singleton<Table>
     {
         public static int DIR_NUM = 8;
 
         [SerializeField]
         private List<Player> m_Players;
+        public List<Player> Players
+        {
+            get { return m_Players; }
+        }
+
         private int m_CurrentPlayerID = 0;
+        public int CurrentPlayerID
+        {
+            get { return m_CurrentPlayerID; }
+        }
 
         [SerializeField]
         private VisualBoard m_Board;
+        public VisualBoard Board
+        {
+            get { return m_Board; }
+        }
 
         [SerializeField]
         private VisualDeck m_DiscardPile;
@@ -25,11 +46,24 @@ namespace ArrowCardGame
         //We only store this for the GetVisualCardSlot function
         [SerializeField]
         private List<VisualDeck> m_Hands;
+        public List<VisualDeck> Hands
+        {
+            get { return m_Hands; }
+        }
 
         [SerializeField]
         private List<VisualDeck> m_Decks;
+        public List<VisualDeck> Decks
+        {
+            get { return m_Decks; }
+        }
+
+        private TurnPhase m_CurrentTurnPhase;
+        private List<TurnPhase> m_TurnPhases;
 
         //Events
+
+        //Game
         private VoidPlayerTypePlayerTypeDelegate m_StartGameEvent;
         public VoidPlayerTypePlayerTypeDelegate StartGameEvent
         {
@@ -44,6 +78,7 @@ namespace ArrowCardGame
             set { m_EndGameEvent = value; }
         }
 
+        //Turns
         private VoidIntPlayerTypeDelegate m_StartTurnEvent;
         public VoidIntPlayerTypeDelegate StartTurnEvent
         {
@@ -65,6 +100,13 @@ namespace ArrowCardGame
             {
                 Debug.LogError("The table does not have 2 players!");
             }
+
+            m_TurnPhases = new List<TurnPhase>();
+
+            m_TurnPhases.Add(new DrawPhase(this));
+            m_TurnPhases.Add(new PlayCardPhase(this));
+            m_TurnPhases.Add(new PlayedCardState(this));
+            m_TurnPhases.Add(new ResolvePhase(this));
         }
 
         private void Start()
@@ -113,9 +155,36 @@ namespace ArrowCardGame
 
             if (m_StartTurnEvent != null)
                 m_StartTurnEvent(m_CurrentPlayerID, m_Players[m_CurrentPlayerID].PlayerType);
+
+            ChangeTurnPhase(TurnPhaseType.Draw);
+        }
+
+        public void EndDrawingPhase()
+        {
+            ChangeTurnPhase(TurnPhaseType.PlayCard);
+        }
+
+        public void PlayedCard(bool state)
+        {
+            if (state)
+            {
+                ChangeTurnPhase(TurnPhaseType.PlayedCard);
+            }
+            else
+            {
+                ChangeTurnPhase(TurnPhaseType.PlayCard);
+            }
         }
 
         public void EndTurn()
+        {
+            ChangeTurnPhase(TurnPhaseType.Resolve);
+
+            StopAllCoroutines();
+            StartCoroutine(ResolveRoutine());
+        }
+
+        private IEnumerator ResolveRoutine()
         {
             ArrowResult result = m_Board.Resolve(m_DiscardPile);
 
@@ -127,7 +196,7 @@ namespace ArrowCardGame
                     int nextPlayerID = GetNextPlayerID(m_CurrentPlayerID);
                     m_Players[nextPlayerID].DamageableObject.ModifyHealth(-result.redArrows);
                 }
-                
+
                 //Heal
                 if (result.redArrows < result.blueArrows)
                 {
@@ -142,6 +211,9 @@ namespace ArrowCardGame
                     m_Players[nextPlayerID].DamageableObject.ModifyHealth(-result.redArrows);
                 }
             }
+
+            //Give us some time so the effects can go off
+            yield return new WaitForSeconds(0.5f);
 
             if (m_EndTurnEvent != null)
                 m_EndTurnEvent();
@@ -167,14 +239,27 @@ namespace ArrowCardGame
             return false;
         }
 
-        public void AllowCardDrawing(bool state)
+        public TurnPhase GetState(TurnPhaseType type)
         {
-            for (int i = 0; i < m_Decks.Count; ++i)
-            {
-                m_Decks[i].AllowClicks(state);
-            }
+            return m_TurnPhases[(int)type];
         }
 
+        private void ChangeTurnPhase(TurnPhaseType type)
+        {
+            if (m_CurrentTurnPhase == m_TurnPhases[(int)type])
+                return;
+
+            if (m_CurrentTurnPhase != null)
+                m_CurrentTurnPhase.ExitPhase();
+
+            m_CurrentTurnPhase = m_TurnPhases[(int)type];
+            m_CurrentTurnPhase.EnterPhase();
+        }
+
+        public PlayerType GetCurrentPlayerType()
+        {
+            return m_Players[m_CurrentPlayerID].PlayerType;
+        }
 
         //Utility, shouldn't be here?
         public VisualCardSlot GetVisualCardSlot(CardSlot cardSlot)
@@ -209,9 +294,138 @@ namespace ArrowCardGame
             return rotatedDir;
         }
 
+        public int GetNextPlayerID()
+        {
+            return (m_CurrentPlayerID + 1) % m_Players.Count;
+        }
+
         private int GetNextPlayerID(int playerID)
         {
             return (playerID + 1) % m_Players.Count;
         }
+    }
+
+    //Base class instead of interface as interfaces don't do well with property fiels.
+    //This resulted in a lot more code duplication than expected. Therefore the TurnPhase class.
+    public class TurnPhase
+    {
+        protected Table m_Table;
+
+        //Events
+        private VoidDelegate m_EnterPhaseEvent;
+        public VoidDelegate EnterPhaseEvent
+        {
+            get { return m_EnterPhaseEvent; }
+            set { m_EnterPhaseEvent = value; }
+        }
+
+        private VoidDelegate m_ExitPhaseEvent;
+        public VoidDelegate ExitPhaseEvent
+        {
+            get { return m_ExitPhaseEvent; }
+            set { m_ExitPhaseEvent = value; }
+        }
+
+        public TurnPhase(Table table)
+        {
+            m_Table = table;
+        }
+
+        public virtual void EnterPhase()
+        {
+            if (m_EnterPhaseEvent != null)
+                m_EnterPhaseEvent();
+        }
+
+        public virtual void ExitPhase()
+        {
+            if (m_ExitPhaseEvent != null)
+                m_ExitPhaseEvent();
+        }
+    }
+
+    public class DrawPhase : TurnPhase
+    {
+        public DrawPhase(Table table) : base(table) {}
+
+        public override void EnterPhase()
+        {
+            base.EnterPhase();
+
+            //If the current player is AI. Lock everything!
+            if (m_Table.GetCurrentPlayerType() == PlayerType.AI)
+            {
+                foreach (VisualDeck visualDeck in m_Table.Decks) { visualDeck.Lock(true); }
+                foreach (VisualDeck visualDeck in m_Table.Hands) { visualDeck.Lock(true); }
+
+                //Lock the entire board (otherwise the player can quickly take cards of the AI
+                m_Table.Board.Lock(true);
+            }
+            else
+            {
+                //Unlock all the decks
+                foreach (VisualDeck visualDeck in m_Table.Decks)
+                {
+                    visualDeck.Lock(false);
+                }
+
+                //Lock all the cards in our hand
+                m_Table.Hands[m_Table.CurrentPlayerID].LockUsedSlots();
+
+                //Lock the opponents hand
+                m_Table.Hands[m_Table.GetNextPlayerID()].Lock(true);
+
+                //Lock part of the board
+                m_Table.Board.LockUsedSlots();
+            }
+        }
+
+        public override void ExitPhase()
+        {
+            base.ExitPhase();
+
+            //Lock all the decks
+            for (int i = 0; i < m_Table.Decks.Count; ++i)
+            {
+                m_Table.Decks[i].Lock(true);
+            }
+        }
+    }
+
+    public class PlayCardPhase : TurnPhase
+    {
+        public PlayCardPhase(Table table) : base(table) {}
+
+        public override void EnterPhase()
+        {
+            base.EnterPhase();
+
+            //Unlock our hand
+            if (m_Table.Players[m_Table.CurrentPlayerID].PlayerType == PlayerType.Human)
+            {
+                m_Table.Hands[m_Table.CurrentPlayerID].Lock(false);
+            }
+        }
+    }
+
+    public class PlayedCardState : TurnPhase 
+    {
+        public PlayedCardState(Table table) : base(table) { }
+
+        public override void EnterPhase()
+        {
+            base.EnterPhase();
+
+            //Lock the hand
+            if (m_Table.Players[m_Table.CurrentPlayerID].PlayerType == PlayerType.Human)
+            {
+                m_Table.Hands[m_Table.CurrentPlayerID].Lock(true);
+            }
+        }
+    }
+
+    public class ResolvePhase : TurnPhase
+    {
+        public ResolvePhase(Table table) : base(table) {}
     }
 }

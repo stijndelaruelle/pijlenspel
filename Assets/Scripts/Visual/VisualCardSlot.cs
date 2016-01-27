@@ -11,6 +11,9 @@ namespace ArrowCardGame
     public class VisualCardSlot : MonoBehaviour, IPointerDownHandler, IDropHandler
     {
         [SerializeField]
+        private CanvasGroup m_CanvasGroup;
+
+        [SerializeField]
         private bool m_FaceUp = true;
         public bool FaceUp
         {
@@ -75,6 +78,11 @@ namespace ArrowCardGame
                 m_VisualCardSlotUpdatedEvent(this);
         }
 
+        public void Lock(bool state)
+        {
+            m_CanvasGroup.blocksRaycasts = !state;
+        }
+
         //----------------
         // INTERFACES
         //----------------
@@ -82,15 +90,12 @@ namespace ArrowCardGame
         //IPointerDownHandler
         public void OnPointerDown(PointerEventData eventData)
         {
-            Debug.Log("We tapped the board");
+            Debug.Log("We tapped the card");
         }
 
         //IDropHandler
         public void OnDrop(PointerEventData eventData)
         {
-            //We drop a card on here
-            //Debug.Log("We dropped a card on the board!");
-
             //We only accept 1 card
             if (transform.childCount > 0)
                 return;

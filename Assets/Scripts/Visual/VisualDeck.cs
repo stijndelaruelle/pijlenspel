@@ -26,9 +26,6 @@ namespace ArrowCardGame
         [SerializeField]
         private VisualDeck m_PlayerHand;
 
-        [SerializeField]
-        private CanvasGroup m_CanvasGroup;
-
         private Deck m_Deck;
         public Deck Deck
         {
@@ -102,9 +99,20 @@ namespace ArrowCardGame
                 m_Deck.CardSlotAddedEvent -= OnCardSlotDataAdded;
         }
 
-        public void AllowClicks(bool state)
+        public void Lock(bool state)
         {
-            m_CanvasGroup.blocksRaycasts = state;
+            foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
+            {
+                visualCardSlot.Lock(state);
+            }
+        }
+
+        public void LockUsedSlots()
+        {
+            foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
+            {
+                visualCardSlot.Lock(visualCardSlot.VisualCard != null);
+            }
         }
 
         public int NumberOfCards()

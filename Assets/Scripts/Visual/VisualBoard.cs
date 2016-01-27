@@ -53,6 +53,22 @@ namespace ArrowCardGame
             return m_Board.Resolve(discardPile.Deck);
         }
 
+        public void Lock(bool state)
+        {
+            foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
+            {
+                visualCardSlot.Lock(state);
+            }
+        }
+
+        public void LockUsedSlots()
+        {
+            foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
+            {
+                visualCardSlot.Lock(visualCardSlot.VisualCard != null);
+            }
+        }
+
         public VisualCardSlot GetVisualCardSlot(CardSlot cardSlot)
         {
             foreach (VisualCardSlot visualCardSlot in m_VisualCardSlots)
@@ -66,6 +82,7 @@ namespace ArrowCardGame
 
         private void OnCardSlotUpdated(VisualCardSlot visualCardSlot)
         {
+            Table.Instance.PlayedCard(visualCardSlot.VisualCard != null);
             m_Board.Analyse();
         }
     }

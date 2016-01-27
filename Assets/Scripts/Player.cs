@@ -91,11 +91,7 @@ namespace ArrowCardGame
             if (!m_IsPlaying)
                 return;
 
-            //Allow drawing cards from all the decks
-            bool isHuman = (m_PlayerType == PlayerType.Human);
-            Table.Instance.AllowCardDrawing(isHuman);
-
-            if (!isHuman)
+            if (m_PlayerType == PlayerType.AI)
             {
                 AutoPlay();
             }
@@ -107,9 +103,9 @@ namespace ArrowCardGame
             if (!m_IsPlaying)
                 return;
 
-            if (m_Hand.NumberOfCards() >= 4)
+            if (m_Hand.NumberOfCards() >= 3)
             {
-                Table.Instance.AllowCardDrawing(false);
+                Table.Instance.EndDrawingPhase();
             }
         }
 
@@ -125,6 +121,8 @@ namespace ArrowCardGame
             yield return new WaitForSeconds(0.5f);
 
             m_AIController.DrawCard();
+            Table.Instance.EndDrawingPhase();
+
             m_AIController.CalculateMove();
 
             //Give the player a bit of time to see what card the AI drew
